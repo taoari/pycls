@@ -19,7 +19,7 @@ from pycls.core.config import cfg
 
 
 # Show filename and line number in logs
-_FORMAT = "[%(filename)s: %(lineno)3d]: %(message)s"
+_FORMAT = "[%(asctime)-15s][%(filename)s: %(lineno)3d]: %(message)s"
 
 # Log file name (for cfg.LOG_DEST = 'file')
 _LOG_FILE = "stdout.log"
@@ -40,22 +40,45 @@ def _suppress_print():
     builtins.print = ignore
 
 
+def initialize_logger(log_file, _format='%(asctime)-15s] %(message)s'):
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    # auto time stamp the log file name
+    if log_file == 'auto':
+        from datetime import datetime
+        log_file = str(datetime.now()).replace(' ', 'T').replace(':', '-') + '.log.txt'
+        
+    # create console handler and set level to info
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter(_format))
+    logger.addHandler(handler)
+
+    # create debug file handler and set level to debug
+    handler = logging.FileHandler(log_file, "w")
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter(_format))
+    logger.addHandler(handler)
+
+
 def setup_logging():
     """Sets up the logging."""
     # Enable logging only for the master process
     if dist.is_master_proc():
-        # Clear the root logger to prevent any existing logging config
-        # (e.g. set by another module) from messing with our setup
-        logging.root.handlers = []
-        # Construct logging configuration
-        logging_config = {"level": logging.INFO, "format": _FORMAT}
-        # Log either to stdout or to a file
-        if cfg.LOG_DEST == "stdout":
-            logging_config["stream"] = sys.stdout
-        else:
-            logging_config["filename"] = os.path.join(cfg.OUT_DIR, _LOG_FILE)
-        # Configure logging
-        logging.basicConfig(**logging_config)
+        initialize_logger(os.path.join(cfg.OUT_DIR, _LOG_FILE), _FORMAT)
+#        # Clear the root logger to prevent any existing logging config
+#        # (e.g. set by another module) from messing with our setup
+#        logging.root.handlers = []
+#        # Construct logging configuration
+#        logging_config = {"level": logging.INFO, "format": _FORMAT}
+#        # Log either to stdout or to a file
+#        if cfg.LOG_DEST == "stdout":
+#            logging_config["stream"] = sys.stdout
+#        else:
+#            logging_config["filename"] = os.path.join(cfg.OUT_DIR, _LOG_FILE)
+#        # Configure logging
+#        logging.basicConfig(**logging_config)
     else:
         _suppress_print()
 
