@@ -109,7 +109,7 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
         train_meter.log_iter_stats(cur_epoch, cur_iter, writer)
         train_meter.iter_tic()
     # Log epoch stats
-    train_meter.log_epoch_stats(cur_epoch, writer, split='train')
+    train_meter.log_epoch_stats(cur_epoch, writer)
     train_meter.reset()
 
 
@@ -136,7 +136,7 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         test_meter.log_iter_stats(cur_epoch, cur_iter)
         test_meter.iter_tic()
     # Log epoch stats
-    test_meter.log_epoch_stats(cur_epoch, writer, split='val')
+    test_meter.log_epoch_stats(cur_epoch, writer)
     test_meter.reset()
 
 

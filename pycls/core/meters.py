@@ -177,14 +177,14 @@ class TrainMeter(object):
         }
         return stats
 
-    def log_epoch_stats(self, cur_epoch, writer=None, split='train'):
+    def log_epoch_stats(self, cur_epoch, writer=None):
         stats = self.get_epoch_stats(cur_epoch)
         logger.info(logging.dump_log_data(stats, "train_epoch"))
         if writer is not None:
-            writer.add_scalar('top1_err/{}_epoch'.format(split), stats['top1_err'], cur_epoch)
-            writer.add_scalar('top5_err/{}_epoch'.format(split), stats['top5_err'], cur_epoch)
-            writer.add_scalar('loss/{}_epoch'.format(split), stats['loss'], cur_epoch)
-            writer.add_scalar('lr/{}_epoch'.format(split), stats['lr'], cur_epoch)
+            writer.add_scalar('top1_err/train_epoch', stats['top1_err'], cur_epoch)
+            writer.add_scalar('top5_err/train_epoch', stats['top5_err'], cur_epoch)
+            writer.add_scalar('loss/train_epoch', stats['loss'], cur_epoch)
+            writer.add_scalar('lr/train_epoch', stats['lr'], cur_epoch)
 
 
 class TestMeter(object):
@@ -264,6 +264,9 @@ class TestMeter(object):
         }
         return stats
 
-    def log_epoch_stats(self, cur_epoch):
+    def log_epoch_stats(self, cur_epoch, writer=None):
         stats = self.get_epoch_stats(cur_epoch)
         logger.info(logging.dump_log_data(stats, "test_epoch"))
+        if writer is not None:
+            writer.add_scalar('top1_err/test_epoch', stats['top1_err'], cur_epoch)
+            writer.add_scalar('top5_err/test_epoch', stats['top5_err'], cur_epoch)
