@@ -48,7 +48,8 @@ def setup_env():
     # Configure the CUDNN backend
     torch.backends.cudnn.benchmark = cfg.CUDNN.BENCHMARK
     global writer
-    writer = SummaryWriter(log_dir=os.path.join(cfg.OUT_DIR, 'runs'))
+    if dist.is_master_proc():
+        writer = SummaryWriter(log_dir=os.path.join(cfg.OUT_DIR, 'runs'))
 
 
 def setup_model():
