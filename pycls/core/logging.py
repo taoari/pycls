@@ -40,25 +40,26 @@ def _suppress_print():
     builtins.print = ignore
 
 
-def initialize_logger(log_file, _format='%(asctime)-15s] %(message)s'):
+def initialize_logger(log_file, level=logging.DEBUG, _format='%(asctime)-15s] %(message)s',
+        mode='a'):
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
 
     # auto time stamp the log file name
-    if log_file == 'auto':
+    if log_file.endswith('auto'):
         from datetime import datetime
-        log_file = str(datetime.now()).replace(' ', 'T').replace(':', '-') + '.log.txt'
-        
+        log_file = log_file[:-len('auto')] + str(datetime.now()).replace(' ', 'T').replace(':', '-') + '.log.txt'
+
     # create console handler and set level to info
     handler = logging.StreamHandler()
     handler.setLevel(logging.INFO)
-    handler.setFormatter(logging.Formatter(_format))
+    handler.setFormatter(logging.Formatter(_format, datefmt='%Y-%m-%d %H:%M:%S'))
     logger.addHandler(handler)
 
     # create debug file handler and set level to debug
-    handler = logging.FileHandler(log_file, "w")
+    handler = logging.FileHandler(log_file, mode=mode)
     handler.setLevel(logging.DEBUG)
-    handler.setFormatter(logging.Formatter(_format))
+    handler.setFormatter(logging.Formatter(_format, datefmt='%Y-%m-%d %H:%M:%S'))
     logger.addHandler(handler)
 
 
@@ -66,7 +67,7 @@ def setup_logging():
     """Sets up the logging."""
     # Enable logging only for the master process
     if dist.is_master_proc():
-        initialize_logger(os.path.join(cfg.OUT_DIR, _LOG_FILE), _FORMAT)
+        initialize_logger(os.path.join(cfg.OUT_DIR, _LOG_FILE), _format=_FORMAT)
 #        # Clear the root logger to prevent any existing logging config
 #        # (e.g. set by another module) from messing with our setup
 #        logging.root.handlers = []
