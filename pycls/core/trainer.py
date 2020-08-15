@@ -23,8 +23,11 @@ import pycls.datasets.loader as loader
 import torch
 from pycls.core.config import cfg
 
+from torch.utils.tensorboard import SummaryWriter
+
 
 logger = logging.get_logger(__name__)
+writer = None
 
 
 def setup_env():
@@ -44,6 +47,8 @@ def setup_env():
     torch.manual_seed(cfg.RNG_SEED)
     # Configure the CUDNN backend
     torch.backends.cudnn.benchmark = cfg.CUDNN.BENCHMARK
+    global writer
+    writer = SummaryWriter(log_dir=os.path.join(cfg.OUT_DIR, 'runs'))
 
 
 def setup_model():
@@ -101,10 +106,10 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
         # Update and log stats
         mb_size = inputs.size(0) * cfg.NUM_GPUS
         train_meter.update_stats(top1_err, top5_err, loss, lr, mb_size)
-        train_meter.log_iter_stats(cur_epoch, cur_iter)
+        train_meter.log_iter_stats(cur_epoch, cur_iter, writer)
         train_meter.iter_tic()
     # Log epoch stats
-    train_meter.log_epoch_stats(cur_epoch)
+    train_meter.log_epoch_stats(cur_epoch, writer, split='train')
     train_meter.reset()
 
 
@@ -131,7 +136,7 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         test_meter.log_iter_stats(cur_epoch, cur_iter)
         test_meter.iter_tic()
     # Log epoch stats
-    test_meter.log_epoch_stats(cur_epoch)
+    test_meter.log_epoch_stats(cur_epoch, writer, split='val')
     test_meter.reset()
 
 

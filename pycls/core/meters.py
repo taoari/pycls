@@ -146,11 +146,17 @@ class TrainMeter(object):
         }
         return stats
 
-    def log_iter_stats(self, cur_epoch, cur_iter):
+    def log_iter_stats(self, cur_epoch, cur_iter, writer=None):
         if (cur_iter + 1) % cfg.LOG_PERIOD != 0:
             return
         stats = self.get_iter_stats(cur_epoch, cur_iter)
         logger.info(logging.dump_log_data(stats, "train_iter"))
+        if writer is not None:
+            global_iter = cur_epoch * self.epoch_iters + cur_iter
+            writer.add_scalar('top1_err/train_iter', stats['top1_err'], global_iter)
+            writer.add_scalar('top5_err/train_iter', stats['top5_err'], global_iter)
+            writer.add_scalar('loss/train_iter', stats['top5_err'], global_iter)
+            writer.add_scalar('lr/train_iter', stats['lr'], global_iter)
 
     def get_epoch_stats(self, cur_epoch):
         cur_iter_total = (cur_epoch + 1) * self.epoch_iters
@@ -171,9 +177,14 @@ class TrainMeter(object):
         }
         return stats
 
-    def log_epoch_stats(self, cur_epoch):
+    def log_epoch_stats(self, cur_epoch, writer=None, split='train'):
         stats = self.get_epoch_stats(cur_epoch)
         logger.info(logging.dump_log_data(stats, "train_epoch"))
+        if writer is not None:
+            writer.add_scalar('top1_err/{}_epoch'.format(split), stats['top1_err'], cur_epoch)
+            writer.add_scalar('top5_err/{}_epoch'.format(split), stats['top5_err'], cur_epoch)
+            writer.add_scalar('loss/{}_epoch'.format(split), stats['loss'], cur_epoch)
+            writer.add_scalar('lr/{}_epoch'.format(split), stats['lr'], cur_epoch)
 
 
 class TestMeter(object):
