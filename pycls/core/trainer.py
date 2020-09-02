@@ -80,7 +80,8 @@ def setup_model():
             module=model, device_ids=[cur_device], output_device=cur_device
         )
         # Set complexity function to be module's complexity function
-        model.complexity = model.module.complexity
+        if hasattr(model.module, 'complexity'):
+            model.complexity = model.module.complexity
     return model
 
 
