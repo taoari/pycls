@@ -57,7 +57,9 @@ def setup_model():
     """Sets up a model for training or testing and log the results."""
     # Build the model
     model = builders.build_model()
-    logger.info("Model:\n{}".format(model))
+    model_strs = str(model).split('\n')
+    model_strs = model_strs[:25] + ['... ...'] + model_strs[-25:] if len(model_strs) > 50 else model_strs
+    logger.info("Model:\n{}".format('\n'.join(model_strs)))
     # Log model complexity
     logger.info(logging.dump_log_data(net.complexity(model), "complexity"))
     # Transfer the model to the current GPU device
