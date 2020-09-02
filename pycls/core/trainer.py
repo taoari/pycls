@@ -55,6 +55,8 @@ def setup_env():
     global writer
     if dist.is_master_proc():
         writer = SummaryWriter(log_dir=os.path.join(cfg.OUT_DIR, 'runs'))
+    from taowei.torch2.utils.classif import print_torch_info
+    print_torch_info()
 
 
 def setup_model():
