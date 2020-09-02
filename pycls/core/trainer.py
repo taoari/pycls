@@ -115,7 +115,7 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
         # Update and log stats
         mb_size = inputs.size(0) * cfg.NUM_GPUS
 
-        progress.update('loss', loss.item(), mb_size)
+        progress.update('loss', loss, mb_size)
         progress.update('top1_err', top1_err, mb_size)
         progress.update('top5_err', top5_err, mb_size)
 
@@ -124,7 +124,7 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
         end = time.time()
 
         if cur_iter % cfg.LOG_PERIOD == 0:
-            progress.log_iter_stats(iter=i, batch_size=mb_size,
+            progress.log_iter_stats(iter=cur_iter, batch_size=mb_size,
                 lr=optimizer.param_groups[0]['lr'])
 
     progress.log_epoch_stats(lr=optimizer.param_groups[0]['lr'])
@@ -162,7 +162,7 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         top1_err, top5_err = top1_err.item(), top5_err.item()
 
         mb_size = inputs.size(0) * cfg.NUM_GPUS
-        # progress.update('loss', loss.item(), mb_size)
+        # progress.update('loss', loss, mb_size)
         progress.update('top1_err', top1_err, mb_size)
         progress.update('top5_err', top5_err, mb_size)
 
@@ -171,7 +171,7 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         end = time.time()
 
         if cur_iter % cfg.LOG_PERIOD == 0:
-            progress.log_iter_stats(iter=i, batch_size=mb_size)
+            progress.log_iter_stats(iter=cur_iter, batch_size=mb_size)
 
     progress.log_epoch_stats()
 
