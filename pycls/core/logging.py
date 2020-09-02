@@ -67,7 +67,7 @@ def setup_logging():
     """Sets up the logging."""
     # Enable logging only for the master process
     if dist.is_master_proc():
-        initialize_logger(os.path.join(cfg.OUT_DIR, _LOG_FILE), _format=_FORMAT)
+        initialize_logger(os.path.join(cfg.OUT_DIR, _LOG_FILE), mode='a')
 #        # Clear the root logger to prevent any existing logging config
 #        # (e.g. set by another module) from messing with our setup
 #        logging.root.handlers = []
@@ -86,7 +86,8 @@ def setup_logging():
 
 def get_logger(name):
     """Retrieves the logger."""
-    return logging.getLogger(name)
+    return logging.getLogger() # always use the root logger
+    # return logging.getLogger(name)
 
 
 def dump_log_data(data, data_type, prec=4):
