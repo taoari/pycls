@@ -38,7 +38,12 @@ def get_loss_fun():
 
 def build_model():
     """Builds the model."""
-    return get_model()()
+    if cfg.MODEL.ARCH:
+        from taowei.torch2.models import load_network
+        model = load_network(cfg.MODEL.ARCH, **eval(cfg.MODEL.ARCH_KWARGS))
+        return model
+    else:
+        return get_model()()
 
 
 def build_loss_fun():

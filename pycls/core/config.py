@@ -40,6 +40,10 @@ _C.MODEL.NUM_CLASSES = 10
 # Loss function (see pycls/models/loss.py for options)
 _C.MODEL.LOSS_FUN = "cross_entropy"
 
+# Model arch and arch_kwargs (for custom models, higher priority than MODEL.TYPE)
+_C.MODEL.ARCH = ""
+_C.MODEL.ARCH_KWARGS = "{}"
+
 
 # ------------------------------------------------------------------------------------ #
 # ResNet options

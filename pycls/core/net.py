@@ -103,8 +103,11 @@ def complexity(model):
     """Compute model complexity (model can be model instance or model class)."""
     size = cfg.TRAIN.IM_SIZE
     cx = {"h": size, "w": size, "flops": 0, "params": 0, "acts": 0}
-    cx = model.complexity(cx)
-    return {"flops": cx["flops"], "params": cx["params"], "acts": cx["acts"]}
+    if hasattr(model, 'complexity'):
+        cx = model.complexity(cx)
+        return {"flops": cx["flops"], "params": cx["params"], "acts": cx["acts"]}
+    else:
+        return {"flops": 0, "params": 0, "acts": 0}
 
 
 def drop_connect(x, drop_ratio):
