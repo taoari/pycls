@@ -30,6 +30,10 @@ from torch.utils.tensorboard import SummaryWriter
 logger = logging.get_logger(__name__)
 writer = None
 
+from taowei.torch2.utils.logging import initialize_logger, print
+from taowei.torch2.utils import classif
+classif.print = print
+
 
 def setup_env():
     """Sets up environment for training or testing."""

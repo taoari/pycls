@@ -22,7 +22,7 @@ from pycls.core.config import cfg
 _FORMAT = "[%(asctime)-15s][%(filename)s: %(lineno)3d]: %(message)s"
 
 # Log file name (for cfg.LOG_DEST = 'file')
-_LOG_FILE = "stdout.log"
+_LOG_FILE = "stdout.log.txt"
 
 # Data output with dump_log_data(data, data_type) will be tagged w/ this
 _TAG = "json_stats: "
