@@ -8,6 +8,7 @@
 """Tools for training and testing a model."""
 
 import os
+import time
 
 import numpy as np
 import pycls.core.benchmark as benchmark
@@ -77,6 +78,9 @@ def setup_model():
 
 def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch):
     """Performs one epoch of training."""
+    from taowei.torch2.utils.classif import ProgressMeter
+    progress = ProgressMeter(iters_per_epoch=len(train_loader),
+        epoch=cur_epoch, epochs=cfg.OPTIM.MAX_EPOCH, split='train', writer=writer)
     # Shuffle the data
     loader.shuffle(train_loader, cur_epoch)
     # Update the learning rate
@@ -84,8 +88,12 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
     optim.set_lr(optimizer, lr)
     # Enable training mode
     model.train()
-    train_meter.iter_tic()
+    # train_meter.iter_tic()
+    end = time.time()
     for cur_iter, (inputs, labels) in enumerate(train_loader):
+        # measure data loading time
+        progress.update('data_time', time.time() - end)
+
         # Transfer the data to the current GPU device
         inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
         # Perform the forward pass
@@ -103,24 +111,45 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
         loss, top1_err, top5_err = dist.scaled_all_reduce([loss, top1_err, top5_err])
         # Copy the stats from GPU to CPU (sync point)
         loss, top1_err, top5_err = loss.item(), top1_err.item(), top5_err.item()
-        train_meter.iter_toc()
+        # train_meter.iter_toc()
         # Update and log stats
         mb_size = inputs.size(0) * cfg.NUM_GPUS
-        train_meter.update_stats(top1_err, top5_err, loss, lr, mb_size)
-        train_meter.log_iter_stats(cur_epoch, cur_iter, writer)
-        train_meter.iter_tic()
-    # Log epoch stats
-    train_meter.log_epoch_stats(cur_epoch, writer)
-    train_meter.reset()
+
+        progress.update('loss', loss.item(), mb_size)
+        progress.update('top1_err', top1_err, mb_size)
+        progress.update('top5_err', top5_err, mb_size)
+
+        # measure elapsed time
+        progress.update('batch_time', time.time() - end)
+        end = time.time()
+
+        if cur_iter % cfg.LOG_PERIOD == 0:
+            progress.log_iter_stats(iter=i, batch_size=mb_size,
+                lr=optimizer.param_groups[0]['lr'])
+
+    progress.log_epoch_stats(lr=optimizer.param_groups[0]['lr'])
+    #     train_meter.update_stats(top1_err, top5_err, loss, lr, mb_size)
+    #     train_meter.log_iter_stats(cur_epoch, cur_iter, writer)
+    #     train_meter.iter_tic()
+    # # Log epoch stats
+    # train_meter.log_epoch_stats(cur_epoch, writer)
+    # train_meter.reset()
 
 
 @torch.no_grad()
 def test_epoch(test_loader, model, test_meter, cur_epoch):
     """Evaluates the model on the test set."""
+    from taowei.torch2.utils.classif import ProgressMeter
+    progress = ProgressMeter(iters_per_epoch=len(test_loader),
+        epoch=cur_epoch, split='val', writer=writer)
     # Enable eval mode
     model.eval()
-    test_meter.iter_tic()
+    # test_meter.iter_tic()
+    end = time.time()
     for cur_iter, (inputs, labels) in enumerate(test_loader):
+        # measure data loading time
+        progress.update('data_time', time.time() - end)
+
         # Transfer the data to the current GPU device
         inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
         # Compute the predictions
@@ -131,14 +160,29 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         top1_err, top5_err = dist.scaled_all_reduce([top1_err, top5_err])
         # Copy the errors from GPU to CPU (sync point)
         top1_err, top5_err = top1_err.item(), top5_err.item()
-        test_meter.iter_toc()
-        # Update and log stats
-        test_meter.update_stats(top1_err, top5_err, inputs.size(0) * cfg.NUM_GPUS)
-        test_meter.log_iter_stats(cur_epoch, cur_iter)
-        test_meter.iter_tic()
-    # Log epoch stats
-    test_meter.log_epoch_stats(cur_epoch, writer)
-    test_meter.reset()
+
+        mb_size = inputs.size(0) * cfg.NUM_GPUS
+        # progress.update('loss', loss.item(), mb_size)
+        progress.update('top1_err', top1_err, mb_size)
+        progress.update('top5_err', top5_err, mb_size)
+
+        # measure elapsed time
+        progress.update('batch_time', time.time() - end)
+        end = time.time()
+
+        if cur_iter % cfg.LOG_PERIOD == 0:
+            progress.log_iter_stats(iter=i, batch_size=mb_size)
+
+    progress.log_epoch_stats()
+
+    #     test_meter.iter_toc()
+    #     # Update and log stats
+    #     test_meter.update_stats(top1_err, top5_err, inputs.size(0) * cfg.NUM_GPUS)
+    #     test_meter.log_iter_stats(cur_epoch, cur_iter)
+    #     test_meter.iter_tic()
+    # # Log epoch stats
+    # test_meter.log_epoch_stats(cur_epoch, writer)
+    # test_meter.reset()
 
 
 def train_model():
