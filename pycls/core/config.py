@@ -354,7 +354,7 @@ _C.LOG_DEST = "stdout"
 _C.LOG_FILE = "stdout.log.txt"
 
 # Log period in iters
-_C.LOG_PERIOD = 50
+_C.LOG_PERIOD = 100
 
 # Distributed backend
 _C.DIST_BACKEND = "nccl"

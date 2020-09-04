@@ -89,7 +89,7 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
     """Performs one epoch of training."""
     from taowei.torch2.utils.classif import ProgressMeter
     progress = ProgressMeter(iters_per_epoch=len(train_loader),
-        epoch=cur_epoch, epochs=cfg.OPTIM.MAX_EPOCH, split='train', writer=writer)
+        epoch=cur_epoch, epochs=cfg.OPTIM.MAX_EPOCH, split='train', writer=writer, batch_size=cfg.TRAIN.BATCH_SIZE)
     # Shuffle the data
     loader.shuffle(train_loader, cur_epoch)
     # Update the learning rate
@@ -98,10 +98,14 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
     # Enable training mode
     model.train()
     # train_meter.iter_tic()
-    end = time.time()
+    # end = time.time()
+    from taowei.timer import Timer
+    timer = Timer()
+    timer.tic()
     for cur_iter, (inputs, labels) in enumerate(train_loader):
         # measure data loading time
-        progress.update('data_time', time.time() - end)
+        # progress.update('data_time', time.time() - end)
+        progress.update('data_time', timer.toc(from_last_toc=True))
 
         # Transfer the data to the current GPU device
         inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
@@ -109,11 +113,14 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
         preds = model(inputs)
         # Compute the loss
         loss = loss_fun(preds, labels)
+        progress.update('forward_time', timer.toc(from_last_toc=True))
         # Perform the backward pass
         optimizer.zero_grad()
         loss.backward()
+        progress.update('backward_time', timer.toc(from_last_toc=True))
         # Update the parameters
         optimizer.step()
+        progress.update('update_time', timer.toc(from_last_toc=True))
         # Compute the errors
         top1_err, top5_err = meters.topk_errors(preds, labels, [1, 5])
         # Combine the stats across the GPUs (no reduction if 1 GPU used)
@@ -129,8 +136,9 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
         progress.update('top5_err', top5_err, mb_size)
 
         # measure elapsed time
-        progress.update('batch_time', time.time() - end)
-        end = time.time()
+        # progress.update('batch_time', time.time() - end)
+        # end = time.time()
+        progress.update('batch_time', timer.toctic())
 
         if cur_iter % cfg.LOG_PERIOD == 0:
             progress.log_iter_stats(iter=cur_iter, batch_size=mb_size,
@@ -150,19 +158,24 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
     """Evaluates the model on the test set."""
     from taowei.torch2.utils.classif import ProgressMeter
     progress = ProgressMeter(iters_per_epoch=len(test_loader),
-        epoch=cur_epoch, split='val', writer=writer)
+        epoch=cur_epoch, split='val', writer=writer, batch_size=cfg.TEST.BATCH_SIZE)
     # Enable eval mode
     model.eval()
     # test_meter.iter_tic()
-    end = time.time()
+    # end = time.time()
+    from taowei.timer import Timer
+    timer = Timer()
+    timer.tic()
     for cur_iter, (inputs, labels) in enumerate(test_loader):
         # measure data loading time
-        progress.update('data_time', time.time() - end)
+        # progress.update('data_time', time.time() - end)
+        progress.update('data_time', timer.toc(from_last_toc=True))
 
         # Transfer the data to the current GPU device
         inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
         # Compute the predictions
         preds = model(inputs)
+        progress.update('forward_time', timer.toc(from_last_toc=True))
         # Compute the errors
         top1_err, top5_err = meters.topk_errors(preds, labels, [1, 5])
         # Combine the errors across the GPUs  (no reduction if 1 GPU used)
@@ -176,8 +189,9 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         progress.update('top5_err', top5_err, mb_size)
 
         # measure elapsed time
-        progress.update('batch_time', time.time() - end)
-        end = time.time()
+        # progress.update('batch_time', time.time() - end)
+        # end = time.time()
+        progress.update('batch_time', timer.toctic())
 
         if cur_iter % cfg.LOG_PERIOD == 0:
             progress.log_iter_stats(iter=cur_iter, batch_size=mb_size)
