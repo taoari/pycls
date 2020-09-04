@@ -351,6 +351,8 @@ _C.RNG_SEED = 1
 # Log destination ('stdout' or 'file')
 _C.LOG_DEST = "stdout"
 
+_C.LOG_FILE = "stdout.log.txt"
+
 # Log period in iters
 _C.LOG_PERIOD = 50
 
