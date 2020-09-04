@@ -298,6 +298,8 @@ _C.DATA_LOADER.NUM_WORKERS = 8
 # Load data to pinned host memory
 _C.DATA_LOADER.PIN_MEMORY = True
 
+_C.DATA_LOADER.DATA_ROOT = ""
+
 
 # ------------------------------------------------------------------------------------ #
 # Memory options
