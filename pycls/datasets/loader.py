@@ -27,8 +27,50 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 _PATHS = {"cifar10": "cifar10", "imagenet": "imagenet"}
 
 
+def get_dataloader(dataset_name, split, batch_size, shuffle, drop_last):
+    data_root = cfg.DATA_LOADER.DATA_ROOT if cfg.DATA_LOADER.DATA_ROOT else os.path.join(_DATA_DIR, _PATHS[dataset_name])
+    data_aug = cfg.DATA_LOADER.DATA_AUG
+    crop_size = cfg.TRAIN.IM_SIZE
+    workers = cfg.DATA_LOADER.NUM_WORKERS
+    pin_memory = cfg.DATA_LOADER.PIN_MEMORY
+    backend = cfg.DATA_LOADER.BACKEND
+    _world_size = 1 # NOTE: pycls only support for one node
+    distributed = cfg.NUM_GPUS > 1
+
+    is_train = split == 'train'
+    if backend.startswith('dali'):
+        from taowei.torch2.utils.classif import get_dataloader_dali
+        dali_dataset = get_dataloader_dali(dataset=dataset_name, data_root=data_root,
+            batch_size=batch_size, crop_size=crop_size, workers=workers, world_size=max(1, _world_size),
+            backend=backend)
+        loader = dali_dataset.get_train_loader() if is_train else dali_dataset.get_val_loader()
+        loader.sampler = None # TODO: is it OK for dali distributed sampling without a sampler?
+    else:
+        from taowei.torch2.utils.classif import get_transform, get_dataset
+        transform = get_transform(data_aug, is_train=is_train, crop_size=crop_size,
+            backend=backend)
+        dataset = get_dataset(dataset_name, data_root, split,
+            transform=transform, num_examples=0, backend=backend)
+        # Create a sampler for multi-process training
+        sampler = DistributedSampler(dataset) if distributed else None
+        # Create a loader
+        loader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=(False if sampler else shuffle),
+            sampler=sampler,
+            num_workers=workers,
+            pin_memory=pin_memory,
+            drop_last=drop_last,
+        )
+    return loader
+
+
 def _construct_loader(dataset_name, split, batch_size, shuffle, drop_last):
     """Constructs the data loader for the given dataset."""
+    if cfg.DATA_LOADER.BACKEND:
+        return get_dataloader(dataset_name, split, batch_size, shuffle, drop_last)
+
     if cfg.DATA_LOADER.DATA_ROOT:
         dataset = _DATASETS[dataset_name](cfg.DATA_LOADER.DATA_ROOT, split)
     else:

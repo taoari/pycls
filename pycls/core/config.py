@@ -299,6 +299,8 @@ _C.DATA_LOADER.NUM_WORKERS = 8
 _C.DATA_LOADER.PIN_MEMORY = True
 
 _C.DATA_LOADER.DATA_ROOT = ""
+_C.DATA_LOADER.BACKEND = ""
+_C.DATA_LOADER.DATA_AUG = ""
 
 
 # ------------------------------------------------------------------------------------ #
