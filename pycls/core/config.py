@@ -203,6 +203,8 @@ _C.BN.CUSTOM_WEIGHT_DECAY = 0.0
 # ------------------------------------------------------------------------------------ #
 _C.OPTIM = CfgNode()
 
+_C.OPTIM.OPTIMIZER = 'sgd-nesterov'
+
 # Base learning rate
 _C.OPTIM.BASE_LR = 0.1
 
@@ -217,6 +219,8 @@ _C.OPTIM.STEPS = []
 
 # Learning rate multiplier for 'steps' policy
 _C.OPTIM.LR_MULT = 0.1
+
+_C.OPTIM.LR_MIN = 0.0
 
 # Maximal number of epochs
 _C.OPTIM.MAX_EPOCH = 200
@@ -238,6 +242,8 @@ _C.OPTIM.WARMUP_FACTOR = 0.1
 
 # Gradually warm up the OPTIM.BASE_LR over this number of epochs
 _C.OPTIM.WARMUP_EPOCHS = 0
+
+_C.OPTIM.WARMUP_GRADUAL = True
 
 
 # ------------------------------------------------------------------------------------ #
