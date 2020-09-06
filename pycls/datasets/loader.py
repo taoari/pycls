@@ -28,6 +28,7 @@ _PATHS = {"cifar10": "cifar10", "imagenet": "imagenet"}
 
 
 def get_dataloader(dataset_name, split, batch_size, shuffle, drop_last):
+    # NOTE: usually need to specify BACKEND, DATA_AUG, DATA_ROOT, not compatible with cv2 backend as cv2 uses BGR instead of RGB images
     data_root = cfg.DATA_LOADER.DATA_ROOT if cfg.DATA_LOADER.DATA_ROOT else os.path.join(_DATA_DIR, _PATHS[dataset_name])
     data_aug = cfg.DATA_LOADER.DATA_AUG
     crop_size = cfg.TRAIN.IM_SIZE
