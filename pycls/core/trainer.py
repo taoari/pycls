@@ -25,6 +25,7 @@ import torch
 from pycls.core.config import cfg
 
 from torch.utils.tensorboard import SummaryWriter
+from taowei.torch2.utils import _unwrap_model
 
 
 logger = logging.get_logger(__name__)
@@ -63,6 +64,8 @@ def setup_model():
     """Sets up a model for training or testing and log the results."""
     # Build the model
     model = builders.build_model()
+    if hasattr(_unwrap_model(model), 'genotype'):
+        print('Genotype: {}'.format(_unwrap_model(model).genotype))
     model_strs = str(model).split('\n')
     model_strs = model_strs[:25] + ['... ...'] + model_strs[-25:] if len(model_strs) > 50 else model_strs
     logger.info("Model:\n{}".format('\n'.join(model_strs)))

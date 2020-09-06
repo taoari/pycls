@@ -61,7 +61,10 @@ def compute_time_train(model, loss_fun):
             bw_timer.reset()
         # Forward
         fw_timer.tic()
-        preds = model(inputs)
+        if cfg.MODEL.AUXILIARY_WEIGHT > 0.0:
+            preds, _ = model(inputs)
+        else:
+            preds = model(inputs)
         loss = loss_fun(preds, labels)
         torch.cuda.synchronize()
         fw_timer.toc()
