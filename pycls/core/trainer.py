@@ -291,6 +291,10 @@ def train_model():
         next_epoch = cur_epoch + 1
         if next_epoch % cfg.TRAIN.EVAL_PERIOD == 0 or next_epoch == cfg.OPTIM.MAX_EPOCH:
             test_epoch(test_loader, model, test_meter, cur_epoch)
+        # Clear the memory if necessary
+        if cfg.CLEAR_MEMORY:
+            from taowei.torch2.utils import clear_memory
+            clear_memory(verbose=True)
 
 
 def test_model():

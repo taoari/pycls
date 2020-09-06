@@ -383,6 +383,8 @@ _C.PORT_RANGE = [10000, 65000]
 # Models weights referred to by URL are downloaded to this local cache
 _C.DOWNLOAD_CACHE = "/tmp/pycls-download-cache"
 
+# Clear memory after each epoch (required by DALI backend)
+_C.CLEAR_MEMORY = False 
 
 # ------------------------------------------------------------------------------------ #
 # Deprecated keys
