@@ -9,6 +9,7 @@
 
 import os
 import time
+import json
 
 import numpy as np
 import pycls.core.benchmark as benchmark
@@ -64,11 +65,12 @@ def setup_model():
     """Sets up a model for training or testing and log the results."""
     # Build the model
     model = builders.build_model()
-    if hasattr(_unwrap_model(model), 'genotype'):
-        print('Genotype: {}'.format(_unwrap_model(model).genotype))
+    # Log Model Info
     model_strs = str(model).split('\n')
     model_strs = model_strs[:25] + ['... ...'] + model_strs[-25:] if len(model_strs) > 50 else model_strs
     logger.info("Model:\n{}".format('\n'.join(model_strs)))
+    if hasattr(_unwrap_model(model), 'genotype'):
+        print('Genotype:\n{}'.format(_unwrap_model(model).genotype))
     # Log model complexity
     logger.info(logging.dump_log_data(net.complexity(model), "complexity"))
     # Transfer the model to the current GPU device
@@ -230,7 +232,10 @@ def train_model():
     # Construct the model, loss_fun, and optimizer
     model = setup_model()
     loss_fun = builders.build_loss_fun().cuda()
+    print('Criterion:\n{}'.format(loss_fun))
     optimizer = optim.construct_optimizer(model)
+    print('Optimizer:\n{}'.format(optimizer))
+    print('Scheduler Kwargs:\n{}'.format(json.dumps(optim._get_scheduler_kwargs(), indent=4)))
     # Load checkpoint or initial weights
     start_epoch = 0
     if cfg.TRAIN.AUTO_RESUME and checkpoint.has_checkpoint():
@@ -243,7 +248,11 @@ def train_model():
         logger.info("Loaded initial weights from: {}".format(cfg.TRAIN.WEIGHTS))
     # Create data loaders and meters
     train_loader = loader.construct_train_loader()
+    if hasattr(train_loader, 'dataset'):
+        print('Train Dataset:\n{}'.format(train_loader.dataset))
     test_loader = loader.construct_test_loader()
+    if hasattr(test_loader, 'dataset'):
+        print('Test Dataset:\n{}'.format(test_loader.dataset))
     train_meter = meters.TrainMeter(len(train_loader))
     test_meter = meters.TestMeter(len(test_loader))
     # Compute model and loader timings

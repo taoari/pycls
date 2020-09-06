@@ -80,13 +80,12 @@ def get_lr_fun():
     return globals()[lr_fun]
 
 
-def get_epoch_lr(cur_epoch):
-    """Retrieves the lr for the given epoch according to the policy."""
-    from taowei.torch2.utils.optimizer import get_epoch_lr as _get_epoch_lr
+def _get_scheduler_kwargs():
     lr_scheduler = cfg.OPTIM.LR_POLICY
     lr_scheduler = 'multistep' if lr_scheduler == 'steps' else lr_scheduler
     gamma = cfg.OPTIM.LR_MULT if lr_scheduler in ['step', 'multistep'] else cfg.OPTIM.GAMMA
     scheduler_kwargs = {'scheduler': lr_scheduler,
+            'base_lr': cfg.OPTIM.BASE_LR,
             'steps': cfg.OPTIM.STEPS,
             'gamma': gamma,
             'T_max': cfg.OPTIM.MAX_EPOCH,
@@ -94,7 +93,13 @@ def get_epoch_lr(cur_epoch):
             'warmup_gamma': cfg.OPTIM.WARMUP_FACTOR,
             'warmup_gradual': cfg.OPTIM.WARMUP_GRADUAL,
             'min_lr': cfg.OPTIM.LR_MIN}
-    return _get_epoch_lr(epoch=cur_epoch, base_lr=cfg.OPTIM.BASE_LR, **scheduler_kwargs)
+    return scheduler_kwargs
+
+
+def get_epoch_lr(cur_epoch):
+    """Retrieves the lr for the given epoch according to the policy."""
+    from taowei.torch2.utils.optimizer import get_epoch_lr as _get_epoch_lr
+    return _get_epoch_lr(epoch=cur_epoch, **_get_scheduler_kwargs())
 
     # lr = get_lr_fun()(cur_epoch)
     # # Linear warmup
