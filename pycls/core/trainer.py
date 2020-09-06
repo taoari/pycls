@@ -12,6 +12,7 @@ import time
 import json
 
 import numpy as np
+import torch.nn as nn
 import pycls.core.benchmark as benchmark
 import pycls.core.builders as builders
 import pycls.core.checkpoint as checkpoint
@@ -33,7 +34,9 @@ logger = logging.get_logger(__name__)
 writer = None
 
 from taowei.torch2.utils.logging import initialize_logger, print
+from taowei.torch2.utils import viz
 from taowei.torch2.utils import classif
+viz.print = print
 classif.print = print
 
 
