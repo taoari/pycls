@@ -69,15 +69,16 @@ def setup_model():
     # Build the model
     model = builders.build_model()
     # Print summary and plot network
-    try:
-        from taowei.torch2.utils.viz import print_summary, plot_network
-        model.eval() # NOTE: avoid batch_norm buffer being changed
-        data_shape = (1, 3, cfg.TRAIN.IM_SIZE, cfg.TRAIN.IM_SIZE)
-        print_summary(model, data_shape=data_shape)
-        if cfg.NUM_GPUS == 1: # not args.distributed: # TODO: support for distributed
-            plot_network(model, data_shape=data_shape).save(os.path.join(cfg.OUT_DIR, cfg.MODEL.ARCH if cfg.MODEL.ARCH else 'network') + '.gv')
-    except Exception as e:
-        print(e)
+    if cfg.PRINT_SUMMARY:
+        try:
+            from taowei.torch2.utils.viz import print_summary, plot_network
+            model.eval() # NOTE: avoid batch_norm buffer being changed
+            data_shape = (1, 3, cfg.TRAIN.IM_SIZE, cfg.TRAIN.IM_SIZE)
+            print_summary(model, data_shape=data_shape)
+            if cfg.NUM_GPUS == 1: # not args.distributed: # TODO: support for distributed
+                plot_network(model, data_shape=data_shape).save(os.path.join(cfg.OUT_DIR, cfg.MODEL.ARCH if cfg.MODEL.ARCH else 'network') + '.gv')
+        except Exception as e:
+            print(e)
     # Log Model Info
     model_strs = str(model).split('\n')
     model_strs = model_strs[:25] + ['... ...'] + model_strs[-25:] if len(model_strs) > 50 else model_strs

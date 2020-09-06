@@ -386,6 +386,8 @@ _C.DOWNLOAD_CACHE = "/tmp/pycls-download-cache"
 # Clear memory after each epoch (required by DALI backend)
 _C.CLEAR_MEMORY = False 
 
+_C.PRINT_SUMMARY = True
+
 # ------------------------------------------------------------------------------------ #
 # Deprecated keys
 # ------------------------------------------------------------------------------------ #
