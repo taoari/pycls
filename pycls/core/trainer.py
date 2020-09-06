@@ -202,18 +202,15 @@ def test_epoch(test_loader, model, loss_fun, test_meter, cur_epoch):
 
         # Transfer the data to the current GPU device
         inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
-        # NOTE: distributed training requires loss to use all the model parameters, total loss is always calculated 
+        # NOTE: distributed training requires loss to use all the model parameters, total loss is always calculated
+        #       Here preds_aux is None in testing mode
+        # Perform the forward pass
         if cfg.MODEL.AUXILIARY_WEIGHT > 0.0:
-            # Perform the forward pass
-            preds, preds_aux = model(inputs)
-            # Compute the loss
-            loss = loss_fun(preds, labels)
-            loss += cfg.MODEL.AUXILIARY_WEIGHT * loss_fun(preds_aux, labels)
+            preds, _ = model(inputs)
         else:
-            # Perform the forward pass
             preds = model(inputs)
-            # Compute the loss
-            loss = loss_fun(preds, labels)
+        # Compute the loss
+        loss = loss_fun(preds, labels)
         progress.update('forward_time', timer.toc(from_last_toc=True))
         # Compute the errors
         top1_err, top5_err = meters.topk_errors(preds, labels, [1, 5])
@@ -282,6 +279,9 @@ def train_model():
         benchmark.compute_time_full(model, loss_fun, train_loader, test_loader)
     # Perform the training loop
     logger.info("Start epoch: {}".format(start_epoch + 1))
+    # Evaluate the model first
+    if cfg.EVAL_FIRST:
+        test_epoch(test_loader, model, loss_fun, test_meter, start_epoch - 1)
     for cur_epoch in range(start_epoch, cfg.OPTIM.MAX_EPOCH):
         if cfg.MODEL.DROP_PATH_PROB > 0.0:
             # NOTE: drop path prob for DARTS-like models, not affect training
