@@ -43,13 +43,15 @@ def construct_optimizer(model):
         ]
     else:
         optim_params = model.parameters()
-    return torch.optim.SGD(
+
+    from taowei.torch2.utils.classif import get_optimizer
+    return get_optimizer(cfg.OPTIM.OPTIMIZER,
         optim_params,
         lr=cfg.OPTIM.BASE_LR,
         momentum=cfg.OPTIM.MOMENTUM,
         weight_decay=cfg.OPTIM.WEIGHT_DECAY,
-        dampening=cfg.OPTIM.DAMPENING,
-        nesterov=cfg.OPTIM.NESTEROV,
+        # dampening=cfg.OPTIM.DAMPENING, # NOTE: dampening is disabled
+        # nesterov=cfg.OPTIM.NESTEROV, # NOTE: use cfg.OPTIM.OPTIMIZER = 'sgd-nesterov'
     )
 
 
@@ -80,13 +82,27 @@ def get_lr_fun():
 
 def get_epoch_lr(cur_epoch):
     """Retrieves the lr for the given epoch according to the policy."""
-    lr = get_lr_fun()(cur_epoch)
-    # Linear warmup
-    if cur_epoch < cfg.OPTIM.WARMUP_EPOCHS:
-        alpha = cur_epoch / cfg.OPTIM.WARMUP_EPOCHS
-        warmup_factor = cfg.OPTIM.WARMUP_FACTOR * (1.0 - alpha) + alpha
-        lr *= warmup_factor
-    return lr
+    from taowei.torch2.utils.optimizer import get_epoch_lr as _get_epoch_lr
+    lr_scheduler = cfg.OPTIM.LR_POLICY
+    lr_scheduler = 'multistep' if lr_scheduler == 'steps' else lr_scheduler
+    gamma = cfg.OPTIM.LR_MULT if lr_scheduler in ['step', 'multistep'] else cfg.OPTIM.GAMMA
+    scheduler_kwargs = {'scheduler': lr_scheduler,
+            'steps': cfg.OPTIM.STEPS,
+            'gamma': gamma,
+            'T_max': cfg.OPTIM.MAX_EPOCH,
+            'warmup_epoch': cfg.OPTIM.WARMUP_EPOCHS,
+            'warmup_gamma': cfg.OPTIM.WARMUP_FACTOR,
+            'warmup_gradual': cfg.OPTIM.WARMUP_GRADUAL,
+            'min_lr': cfg.OPTIM.LR_MIN}
+    return _get_epoch_lr(epoch=cur_epoch, **scheduler_kwargs)
+
+    # lr = get_lr_fun()(cur_epoch)
+    # # Linear warmup
+    # if cur_epoch < cfg.OPTIM.WARMUP_EPOCHS:
+    #     alpha = cur_epoch / cfg.OPTIM.WARMUP_EPOCHS
+    #     warmup_factor = cfg.OPTIM.WARMUP_FACTOR * (1.0 - alpha) + alpha
+    #     lr *= warmup_factor
+    # return lr
 
 
 def set_lr(optimizer, new_lr):
