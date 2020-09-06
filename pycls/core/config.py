@@ -44,6 +44,11 @@ _C.MODEL.LOSS_FUN = "cross_entropy"
 _C.MODEL.ARCH = ""
 _C.MODEL.ARCH_KWARGS = "{}"
 
+# For DARTS-like model, if auxiliary weight > 0, train with an auxiliary loss
+_C.MODEL.AUXILIARY_WEIGHT = 0.0
+_C.MODEL.DROP_PATH_PROB = 0.0
+_C.MODEL.LABEL_SMOOTH = 0.0
+
 
 # ------------------------------------------------------------------------------------ #
 # ResNet options
@@ -244,6 +249,8 @@ _C.OPTIM.WARMUP_FACTOR = 0.1
 _C.OPTIM.WARMUP_EPOCHS = 0
 
 _C.OPTIM.WARMUP_GRADUAL = True
+
+_C.OPTIM.GRAD_CLIP = 0.0
 
 
 # ------------------------------------------------------------------------------------ #

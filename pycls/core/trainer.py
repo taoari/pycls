@@ -109,14 +109,23 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
 
         # Transfer the data to the current GPU device
         inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
-        # Perform the forward pass
-        preds = model(inputs)
-        # Compute the loss
-        loss = loss_fun(preds, labels)
+        if cfg.MODEL.AUXILIARY_WEIGHT > 0.0:
+            # Perform the forward pass
+            preds, preds_aux = model(inputs)
+            # Compute the loss
+            loss = loss_fun(preds, labels)
+            loss += cfg.MODEL.AUXILIARY_WEIGHT * loss_fun(preds_aux, labels)
+        else:
+            # Perform the forward pass
+            preds = model(inputs)
+            # Compute the loss
+            loss = loss_fun(preds, labels)
         progress.update('forward_time', timer.toc(from_last_toc=True))
         # Perform the backward pass
         optimizer.zero_grad()
         loss.backward()
+        if cfg.OPTIM.GRAD_CLIP > 0.0:
+            nn.utils.clip_grad_norm_(model.parameters(), cfg.OPTIM.GRAD_CLIP)
         progress.update('backward_time', timer.toc(from_last_toc=True))
         # Update the parameters
         optimizer.step()
@@ -174,7 +183,10 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         # Transfer the data to the current GPU device
         inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
         # Compute the predictions
-        preds = model(inputs)
+        if cfg.MODEL.AUXILIARY_WEIGHT > 0.0:
+            preds, _ = model(inputs)
+        else:
+            preds = model(inputs)
         progress.update('forward_time', timer.toc(from_last_toc=True))
         # Compute the errors
         top1_err, top5_err = meters.topk_errors(preds, labels, [1, 5])
@@ -237,6 +249,10 @@ def train_model():
     # Perform the training loop
     logger.info("Start epoch: {}".format(start_epoch + 1))
     for cur_epoch in range(start_epoch, cfg.OPTIM.MAX_EPOCH):
+        if cfg.MODEL.DROP_PATH_PROB > 0.0:
+            # NOTE: drop path prob for DARTS-like models, not affect training
+            assert hasattr(_unwrap_model(model), 'drop_path_prob')
+            _unwrap_model(model).drop_path_prob = cfg.MODEL.DROP_PATH_PROB * cur_epoch / cfg.OPTIM.MAX_EPOCH
         # Train for one epoch
         train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch)
         # Compute precise BN stats
