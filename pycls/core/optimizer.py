@@ -94,7 +94,7 @@ def get_epoch_lr(cur_epoch):
             'warmup_gamma': cfg.OPTIM.WARMUP_FACTOR,
             'warmup_gradual': cfg.OPTIM.WARMUP_GRADUAL,
             'min_lr': cfg.OPTIM.LR_MIN}
-    return _get_epoch_lr(epoch=cur_epoch, **scheduler_kwargs)
+    return _get_epoch_lr(epoch=cur_epoch, base_lr=cfg.OPTIM.BASE_LR, **scheduler_kwargs)
 
     # lr = get_lr_fun()(cur_epoch)
     # # Linear warmup
