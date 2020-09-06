@@ -95,7 +95,8 @@ def setup_model():
     if cfg.NUM_GPUS > 1:
         # Make model replica operate on the current device
         model = torch.nn.parallel.DistributedDataParallel(
-            module=model, device_ids=[cur_device], output_device=cur_device
+            # NOTE: find_unused_parameters=True for DARTS models with auxiliary branch, otherwise will raise RuntimeError: your module has parameters that were not used in producing loss
+            module=model, device_ids=[cur_device], output_device=cur_device, find_unused_parameters=True
         )
         # Set complexity function to be module's complexity function
         if hasattr(model.module, 'complexity'):
@@ -181,7 +182,7 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
 
 
 @torch.no_grad()
-def test_epoch(test_loader, model, test_meter, cur_epoch):
+def test_epoch(test_loader, model, loss_fun, test_meter, cur_epoch):
     """Evaluates the model on the test set."""
     from taowei.torch2.utils.classif import ProgressMeter
     progress = ProgressMeter(iters_per_epoch=len(test_loader),
@@ -200,11 +201,18 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
 
         # Transfer the data to the current GPU device
         inputs, labels = inputs.cuda(), labels.cuda(non_blocking=True)
-        # Compute the predictions
+        # NOTE: distributed training requires loss to use all the model parameters, total loss is always calculated 
         if cfg.MODEL.AUXILIARY_WEIGHT > 0.0:
-            preds, _ = model(inputs)
+            # Perform the forward pass
+            preds, preds_aux = model(inputs)
+            # Compute the loss
+            loss = loss_fun(preds, labels)
+            loss += cfg.MODEL.AUXILIARY_WEIGHT * loss_fun(preds_aux, labels)
         else:
+            # Perform the forward pass
             preds = model(inputs)
+            # Compute the loss
+            loss = loss_fun(preds, labels)
         progress.update('forward_time', timer.toc(from_last_toc=True))
         # Compute the errors
         top1_err, top5_err = meters.topk_errors(preds, labels, [1, 5])
@@ -214,7 +222,7 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
         top1_err, top5_err = top1_err.item(), top5_err.item()
 
         mb_size = inputs.size(0) * cfg.NUM_GPUS
-        # progress.update('loss', loss, mb_size)
+        progress.update('loss', loss.item(), mb_size)
         progress.update('top1_err', top1_err, mb_size)
         progress.update('top5_err', top5_err, mb_size)
 
@@ -290,7 +298,7 @@ def train_model():
         # Evaluate the model
         next_epoch = cur_epoch + 1
         if next_epoch % cfg.TRAIN.EVAL_PERIOD == 0 or next_epoch == cfg.OPTIM.MAX_EPOCH:
-            test_epoch(test_loader, model, test_meter, cur_epoch)
+            test_epoch(test_loader, model, loss_fun, test_meter, cur_epoch)
         # Clear the memory if necessary
         if cfg.CLEAR_MEMORY:
             from taowei.torch2.utils import clear_memory
@@ -303,6 +311,7 @@ def test_model():
     setup_env()
     # Construct the model
     model = setup_model()
+    loss_fun = builders.build_loss_fun().cuda()
     # Load model weights
     checkpoint.load_checkpoint(cfg.TEST.WEIGHTS, model)
     logger.info("Loaded model weights from: {}".format(cfg.TEST.WEIGHTS))
@@ -310,7 +319,7 @@ def test_model():
     test_loader = loader.construct_test_loader()
     test_meter = meters.TestMeter(len(test_loader))
     # Evaluate the model
-    test_epoch(test_loader, model, test_meter, 0)
+    test_epoch(test_loader, model, loss_fun, test_meter, 0)
 
 
 def time_model():
