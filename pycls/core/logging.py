@@ -17,12 +17,14 @@ import pycls.core.distributed as dist
 import simplejson
 from pycls.core.config import cfg
 
+from taowei.log import initialize_logger as _initialize_logger
+from taowei.log import _suppress_print, _redirect_print, _redirect_stderr
 
 # Show filename and line number in logs
-_FORMAT = "[%(asctime)-15s][%(filename)s: %(lineno)3d]: %(message)s"
+_FORMAT = "[%(filename)s: %(lineno)3d]: %(message)s"
 
 # # Log file name (for cfg.LOG_DEST = 'file')
-# _LOG_FILE = "stdout.log.txt"
+# _LOG_FILE = "stdout.log"
 
 # Data output with dump_log_data(data, data_type) will be tagged w/ this
 _TAG = "json_stats: "
@@ -31,36 +33,13 @@ _TAG = "json_stats: "
 _TYPE = "_type"
 
 
-def _suppress_print():
-    """Suppresses printing from the current process."""
+# def _suppress_print():
+#     """Suppresses printing from the current process."""
 
-    def ignore(*_objects, _sep=" ", _end="\n", _file=sys.stdout, _flush=False):
-        pass
+#     def ignore(*_objects, _sep=" ", _end="\n", _file=sys.stdout, _flush=False):
+#         pass
 
-    builtins.print = ignore
-
-
-def initialize_logger(log_file, level=logging.DEBUG, _format='%(asctime)-15s] %(message)s',
-        mode='a'):
-    logger = logging.getLogger()
-    logger.setLevel(level)
-
-    # auto time stamp the log file name
-    if log_file.endswith('auto'):
-        from datetime import datetime
-        log_file = log_file[:-len('auto')] + str(datetime.now()).replace(' ', 'T').replace(':', '-') + '.log.txt'
-
-    # create console handler and set level to info
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
-    handler.setFormatter(logging.Formatter(_format, datefmt='%Y-%m-%d %H:%M:%S'))
-    logger.addHandler(handler)
-
-    # create debug file handler and set level to debug
-    handler = logging.FileHandler(log_file, mode=mode)
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(logging.Formatter(_format, datefmt='%Y-%m-%d %H:%M:%S'))
-    logger.addHandler(handler)
+#     builtins.print = ignore
 
 
 def setup_logging():
@@ -80,19 +59,18 @@ def setup_logging():
                 logging_config["filename"] = os.path.join(cfg.OUT_DIR, cfg.LOG_FILE)
             # Configure logging
             logging.basicConfig(**logging_config)
-        elif cfg.LOG_DEST == 'both':
-            initialize_logger(os.path.join(cfg.OUT_DIR, cfg.LOG_FILE), mode='a')
-        else: # 'both-redirect'
-            initialize_logger(os.path.join(cfg.OUT_DIR, cfg.LOG_FILE), mode='a')
-            _redirect_stdout_and_stderr_to_logging()
+        else:
+            # Log to both stdout and file, also redirect print and stderr
+            _initialize_logger(os.path.join(cfg.OUT_DIR, cfg.LOG_FILE))
+            _redirect_print()
+            _redirect_stderr()
     else:
         _suppress_print()
 
 
 def get_logger(name):
     """Retrieves the logger."""
-    return logging.getLogger() # always use the root logger
-    # return logging.getLogger(name)
+    return logging.getLogger(name)
 
 
 def dump_log_data(data, data_type, prec=4):
@@ -166,38 +144,3 @@ def sort_log_data(data):
         else:
             data[t] = {m: d[0] for m, d in data[t].items()}
     return data
-
-
-class StreamToLogger(object):
-    """
-    Fake file-like stream object that redirects writes to a logger instance.
-    """
-    def __init__(self, logger, log_level=logging.INFO):
-        self.logger = logger
-        self.log_level = log_level
-        self.linebuf = ''
-
-    def write(self, buf):
-        self.linebuf += buf
-        if '\n' in self.linebuf:
-            for line in self.linebuf.rstrip().splitlines():
-                self.logger.log(self.log_level, line.rstrip())
-            self.linebuf = ''
-
-    def flush(self):
-        if self.linebuf:
-            self.logger.log(self.linebuf)
-            self.linebuf = ''
-        for handler in self.logger.handlers:
-            handler.flush()
-
-
-def _redirect_stdout_and_stderr_to_logging():
-    import sys
-    stdout_logger = logging.getLogger('STDOUT')
-    sl = StreamToLogger(stdout_logger, logging.INFO)
-    sys.stdout = sl
-
-    stderr_logger = logging.getLogger('STDERR')
-    sl = StreamToLogger(stderr_logger, logging.ERROR)
-    sys.stderr = sl

@@ -29,13 +29,13 @@ from pycls.core.config import cfg
 from torch.utils.tensorboard import SummaryWriter
 from taowei.torch2.utils import _unwrap_model
 
-# NOTE: it is not necessary to import print, as initialize_logger redirect both stdout and stderr
-#     but it can be faster for direct logging without reformatting
-from taowei.torch2.utils.logging import print
-from taowei.torch2.utils import viz
-from taowei.torch2.utils import classif
-viz.print = print
-classif.print = print
+# # NOTE: it is not necessary to import print, as initialize_logger redirect both stdout and stderr
+# #     but it can be faster for direct logging without reformatting
+# from taowei.torch2.utils.logging import print
+# from taowei.torch2.utils import viz
+# from taowei.torch2.utils import classif
+# viz.print = print
+# classif.print = print
 
 logger = logging.get_logger(__name__)
 writer = None
