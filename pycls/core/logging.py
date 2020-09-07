@@ -68,6 +68,7 @@ def setup_logging():
     # Enable logging only for the master process
     if dist.is_master_proc():
         initialize_logger(os.path.join(cfg.OUT_DIR, cfg.LOG_FILE), mode='a')
+        _redirect_stdout_and_stderr_to_logging()
 #        # Clear the root logger to prevent any existing logging config
 #        # (e.g. set by another module) from messing with our setup
 #        logging.root.handlers = []
@@ -161,3 +162,38 @@ def sort_log_data(data):
         else:
             data[t] = {m: d[0] for m, d in data[t].items()}
     return data
+
+
+class StreamToLogger(object):
+    """
+    Fake file-like stream object that redirects writes to a logger instance.
+    """
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+        self.linebuf = ''
+
+    def write(self, buf):
+        self.linebuf += buf
+        if '\n' in self.linebuf:
+            for line in self.linebuf.rstrip().splitlines():
+                self.logger.log(self.log_level, line.rstrip())
+            self.linebuf = ''
+
+    def flush(self):
+        if self.linebuf:
+            self.logger.log(self.linebuf)
+            self.linebuf = ''
+        for handler in self.logger.handlers:
+            handler.flush()
+
+
+def _redirect_stdout_and_stderr_to_logging():
+    import sys
+    stdout_logger = logging.getLogger('STDOUT')
+    sl = StreamToLogger(stdout_logger, logging.INFO)
+    sys.stdout = sl
+
+    stderr_logger = logging.getLogger('STDERR')
+    sl = StreamToLogger(stderr_logger, logging.ERROR)
+    sys.stderr = sl

@@ -28,16 +28,11 @@ from pycls.core.config import cfg
 
 from torch.utils.tensorboard import SummaryWriter
 from taowei.torch2.utils import _unwrap_model
+from taowei.torch2.utils.logging import initialize_logger
 
 
 logger = logging.get_logger(__name__)
 writer = None
-
-from taowei.torch2.utils.logging import initialize_logger, print
-from taowei.torch2.utils import viz
-from taowei.torch2.utils import classif
-viz.print = print
-classif.print = print
 
 
 def setup_env():
