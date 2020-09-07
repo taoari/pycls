@@ -21,8 +21,8 @@ from pycls.core.config import cfg
 # Show filename and line number in logs
 _FORMAT = "[%(asctime)-15s][%(filename)s: %(lineno)3d]: %(message)s"
 
-# Log file name (for cfg.LOG_DEST = 'file')
-_LOG_FILE = "stdout.log.txt"
+# # Log file name (for cfg.LOG_DEST = 'file')
+# _LOG_FILE = "stdout.log.txt"
 
 # Data output with dump_log_data(data, data_type) will be tagged w/ this
 _TAG = "json_stats: "
@@ -67,20 +67,24 @@ def setup_logging():
     """Sets up the logging."""
     # Enable logging only for the master process
     if dist.is_master_proc():
-        initialize_logger(os.path.join(cfg.OUT_DIR, cfg.LOG_FILE), mode='a')
-        _redirect_stdout_and_stderr_to_logging()
-#        # Clear the root logger to prevent any existing logging config
-#        # (e.g. set by another module) from messing with our setup
-#        logging.root.handlers = []
-#        # Construct logging configuration
-#        logging_config = {"level": logging.INFO, "format": _FORMAT}
-#        # Log either to stdout or to a file
-#        if cfg.LOG_DEST == "stdout":
-#            logging_config["stream"] = sys.stdout
-#        else:
-#            logging_config["filename"] = os.path.join(cfg.OUT_DIR, _LOG_FILE)
-#        # Configure logging
-#        logging.basicConfig(**logging_config)
+        # Clear the root logger to prevent any existing logging config
+        # (e.g. set by another module) from messing with our setup
+        logging.root.handlers = []
+        if cfg.LOG_DEST in ['stdout', 'file']:
+            # Construct logging configuration
+            logging_config = {"level": logging.INFO, "format": _FORMAT}
+            # Log either to stdout or to a file
+            if cfg.LOG_DEST == "stdout":
+                logging_config["stream"] = sys.stdout
+            else:
+                logging_config["filename"] = os.path.join(cfg.OUT_DIR, cfg.LOG_FILE)
+            # Configure logging
+            logging.basicConfig(**logging_config)
+        elif cfg.LOG_DEST == 'both':
+            initialize_logger(os.path.join(cfg.OUT_DIR, cfg.LOG_FILE), mode='a')
+        else: # 'both-redirect'
+            initialize_logger(os.path.join(cfg.OUT_DIR, cfg.LOG_FILE), mode='a')
+            _redirect_stdout_and_stderr_to_logging()
     else:
         _suppress_print()
 
@@ -109,7 +113,7 @@ def float_to_decimal(data, prec=4):
         return data
 
 
-def get_log_files(log_dir, name_filter="", log_file=_LOG_FILE):
+def get_log_files(log_dir, name_filter="", log_file=cfg.LOG_FILE):
     """Get all log files in directory containing subdirs of trained models."""
     names = [n for n in sorted(os.listdir(log_dir)) if name_filter in n]
     files = [os.path.join(log_dir, n, log_file) for n in names]

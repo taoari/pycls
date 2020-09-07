@@ -366,7 +366,7 @@ _C.CFG_DEST = "config.yaml"
 _C.RNG_SEED = 1
 
 # Log destination ('stdout' or 'file')
-_C.LOG_DEST = "stdout"
+_C.LOG_DEST = "both"
 
 _C.LOG_FILE = "stdout.log.txt"
 
@@ -410,8 +410,8 @@ def assert_and_infer_cfg(cache_urls=True):
     err_str = "Mini-batch size should be a multiple of NUM_GPUS."
     assert _C.TRAIN.BATCH_SIZE % _C.NUM_GPUS == 0, err_str
     assert _C.TEST.BATCH_SIZE % _C.NUM_GPUS == 0, err_str
-    err_str = "Log destination '{}' not supported"
-    assert _C.LOG_DEST in ["stdout", "file"], err_str.format(_C.LOG_DEST)
+    # err_str = "Log destination '{}' not supported"
+    # assert _C.LOG_DEST in ["stdout", "file"], err_str.format(_C.LOG_DEST)
     if cache_urls:
         cache_cfg_urls()
 
