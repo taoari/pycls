@@ -92,6 +92,7 @@ def _get_scheduler_kwargs():
             'warmup_epoch': cfg.OPTIM.WARMUP_EPOCHS,
             'warmup_gamma': cfg.OPTIM.WARMUP_FACTOR,
             'warmup_gradual': cfg.OPTIM.WARMUP_GRADUAL,
+            'cooldown_epoch': cfg.OPTIM.COOLDOWN_EPOCHS,
             'min_lr': cfg.OPTIM.LR_MIN}
     return scheduler_kwargs
 
