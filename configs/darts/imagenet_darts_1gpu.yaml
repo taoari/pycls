@@ -4,7 +4,7 @@ MODEL:
   NUM_CLASSES: 1000
   ARCH: taowei.torch2.models.darts.model.NetworkImageNet
   AUXILIARY_WEIGHT: 0.4 # NEW!
-  DROP_PATH_PROB: 0.2
+  DROP_PATH_PROB: 0.0 # NOT SET!
   LABEL_SMOOTH: 0.1
 #RESNET:
   #TRANS_FUN: bottleneck_transform
@@ -21,7 +21,7 @@ OPTIM:
   MAX_EPOCH: 250 # 100
   MOMENTUM: 0.9
   NESTEROV: True
-  WEIGHT_DECAY: 0.0003 # 0.0001
+  WEIGHT_DECAY: 3e-5 # 0.0001, CAN IMPACT PERFORMANCE SIGNIFICANTLY
   GRAD_CLIP: 5.0 # NEW!
 TRAIN:
   DATASET: imagenet
@@ -38,7 +38,7 @@ NUM_GPUS: 1
 DATA_LOADER:
   #NUM_WORKERS: 4 # Default DDS: 8 workers/GPU
   BACKEND: pil # NEW: backend
-  DATA_AUG: fbresearch_colorjitter
+  DATA_AUG: fbresearch_cj
   DATA_ROOT: /gdata/ImageNet2012
 CUDNN:
   BENCHMARK: True
