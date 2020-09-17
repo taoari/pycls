@@ -279,7 +279,7 @@ def train_model():
     if start_epoch == 0 and cfg.PREC_TIME.NUM_ITER > 0:
         benchmark.compute_time_full(model, loss_fun, train_loader, test_loader)
     # Perform the training loop
-    logger.info("Start epoch: {}".format(start_epoch + 1))
+    logger.info("Start epoch: {}".format(start_epoch))
     # Evaluate the model first
     if cfg.EVAL_FIRST:
         test_epoch(test_loader, model, loss_fun, test_meter, start_epoch - 1)
